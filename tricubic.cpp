@@ -205,11 +205,11 @@ fptype TriCubicInterpolator::ip(list xyz){
     dzpow *= dz;
   }
   return result;
-};
+}
 
 BOOST_PYTHON_MODULE(tricubic)
 {
-    class_<TriCubicInterpolator>("tricubic", init<list, list>())
-        .def("ip", &TriCubicInterpolator::ip)
-    ;
-};
+  class_<TriCubicInterpolator>("tricubic", init<list, list>())
+    .def("ip", &TriCubicInterpolator::ip)
+  ;
+}

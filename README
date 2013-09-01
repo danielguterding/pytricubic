@@ -1,6 +1,9 @@
 #pytricubic
 
-pytricubic is a simple Python wrapper for the tricubic interpolation algorithm by Lekien and Marsden in the Implementation by David Kirkby (https://github.com/deepzot/likely). I drastically improved performance by performing the matrix multiplication with the Linear Algebra Template library Eigen.
+pytricubic is a simple Python wrapper for the tricubic interpolation algorithm
+by Lekien and Marsden in the Implementation by David Kirkby
+(https://github.com/deepzot/likely). I drastically improved performance by
+doing the matrix multiplication with the Linear Algebra Template library Eigen.
 
 The tricubic interpolation scheme is described in:
 

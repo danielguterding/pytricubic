@@ -1,0 +1,9 @@
+#pytricubic
+
+pytricubic is a simple Python wrapper for the tricubic interpolation algorithm by Lekien and Marsden in the Implementation by David Kirkby (https://github.com/deepzot/likely).
+
+The tricubic interpolation scheme is described in:
+
+  Lekien, F. and Marsden, J.: Tricubic interpolation in three dimensions.
+                              In: International Journal for Numerical Methods
+                              in Engineering (2005), No. 63, p. 455-471

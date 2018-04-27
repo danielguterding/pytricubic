@@ -19,14 +19,14 @@ tools like g++ and cmake already installed. The template libraries Eigen3 for
 linear algebra and pybind11 for binding to Python are now included in the thirdparty
 subfolder. Threfore, no external requirements exist.
 
-Installing pytricubic is as easy as:
+Installing pytricubic is as easy as:  
 
-  git clone git://github.com/danielguterding/pytricubic.git
-  cd pytricubic
-  mkdir build
-  cd build
-  cmake ../
-  cmake --build ../
+  git clone git://github.com/danielguterding/pytricubic.git  
+  cd pytricubic  
+  mkdir build  
+  cd build  
+  cmake ../  
+  cmake --build ../  
 
 ## 1. Usage
 

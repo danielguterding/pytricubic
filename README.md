@@ -1,4 +1,4 @@
-#pytricubic
+# pytricubic
 
 pytricubic is a simple Python wrapper for the tricubic interpolation algorithm
 by Lekien and Marsden based on the implementation by David Kirkby

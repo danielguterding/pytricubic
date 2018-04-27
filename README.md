@@ -12,7 +12,7 @@ The tricubic interpolation scheme is described in:
                               In: International Journal for Numerical Methods
                               in Engineering (2005), No. 63, p. 455-471
 
-# 0. Building
+## 0. Building
 
 This chapter assumes that you are working in a standard Linux environment with
 tools like g++ and cmake already installed. The template libraries Eigen3 for
@@ -28,7 +28,7 @@ Installing pytricubic is as easy as:
   cmake ../
   cmake --build ../
 
-# 1. Usage
+## 1. Usage
 
 An example of how to use the interpolator class is given in example.py. Only Python lists are
 supported as inputs. Numpy arrays first have to be converted to Python lists.

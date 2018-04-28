@@ -9,10 +9,16 @@ TriCubicInterpolator::TriCubicInterpolator(py::list data, py::list nkpoints)
   _n2 = py::cast<int>(nkpoints[1]);
   _n3 = py::cast<int>(nkpoints[2]);
   _data_ptr = new fptype[_n1 * _n2 * _n3];
-  for (int k = 0; k < _n3; k++)
+  for (int i = 0; i < _n1; i++)
+  {
+    py::list l1 = data[i];
     for (int j = 0; j < _n2; j++)
-      for (int i = 0; i < _n1; i++)
-        _data_ptr[_index(i, j, k)] = py::cast<fptype>(((data[i])[j])[k]);
+    {
+      py::list l2 = l1[j];
+      for (int k = 0; k < _n3; k++)
+        _data_ptr[_index(i, j, k)] = py::cast<fptype>(l2[k]);
+    }
+  }
 
   //temporary array is necessary, otherwise compiler has problems with Eigen and takes very long to compile
   const int temp[64][64] = 

@@ -5,14 +5,14 @@ TriCubicInterpolator::TriCubicInterpolator(py::list data, py::list nkpoints)
 {
   _initialized = false;
   _spacing = 1.0;
-  _n1 = nkpoints[0];
-  _n2 = nkpoints[1];
-  _n3 = nkpoints[2];
+  _n1 = py::cast<int>(nkpoints[0]);
+  _n2 = py::cast<int>(nkpoints[1]);
+  _n3 = py::cast<int>(nkpoints[2]);
   _data_ptr = new fptype[_n1 * _n2 * _n3];
   for (int k = 0; k < _n3; k++)
     for (int j = 0; j < _n2; j++)
       for (int i = 0; i < _n1; i++)
-        _data[_index(i, j, k)] = data[i][j][k];
+        _data_ptr[_index(i, j, k)] = py::cast<fptype>(((data[i])[j])[k]);
 
   //temporary array is necessary, otherwise compiler has problems with Eigen and takes very long to compile
   const int temp[64][64] = 
@@ -89,9 +89,9 @@ TriCubicInterpolator::TriCubicInterpolator(py::list data, py::list nkpoints)
 fptype TriCubicInterpolator::ip(py::list xyz)
 {
 
-  fptype x = xyz[0];
-  fptype y = xyz[1];
-  fptype z =xyz[2];
+  fptype x = py::cast<fptype>(xyz[0]);
+  fptype y = py::cast<fptype>(xyz[1]);
+  fptype z = py::cast<fptype>(xyz[2]);
 
   fptype dx = fmod(x / _spacing, _n1), dy = fmod(y / _spacing, _n2), dz = fmod(z / _spacing, _n3); //determine the relative position in the box enclosed by nearest data points
 
@@ -113,73 +113,73 @@ fptype TriCubicInterpolator::ip(py::list xyz)
     Eigen::Matrix<fptype, 64, 1> x;
     x <<
         // values of f(x,y,z) at each corner.
-        _data[_index(xi, yi, zi)],
-        _data[_index(xi + 1, yi, zi)], _data[_index(xi, yi + 1, zi)],
-        _data[_index(xi + 1, yi + 1, zi)], _data[_index(xi, yi, zi + 1)], _data[_index(xi + 1, yi, zi + 1)],
-        _data[_index(xi, yi + 1, zi + 1)], _data[_index(xi + 1, yi + 1, zi + 1)],
+        _data_ptr[_index(xi, yi, zi)],
+        _data_ptr[_index(xi + 1, yi, zi)], _data_ptr[_index(xi, yi + 1, zi)],
+        _data_ptr[_index(xi + 1, yi + 1, zi)], _data_ptr[_index(xi, yi, zi + 1)], _data_ptr[_index(xi + 1, yi, zi + 1)],
+        _data_ptr[_index(xi, yi + 1, zi + 1)], _data_ptr[_index(xi + 1, yi + 1, zi + 1)],
         // values of df/dx at each corner.
-        0.5 * (_data[_index(xi + 1, yi, zi)] - _data[_index(xi - 1, yi, zi)]),
-        0.5 * (_data[_index(xi + 2, yi, zi)] - _data[_index(xi, yi, zi)]),
-        0.5 * (_data[_index(xi + 1, yi + 1, zi)] - _data[_index(xi - 1, yi + 1, zi)]),
-        0.5 * (_data[_index(xi + 2, yi + 1, zi)] - _data[_index(xi, yi + 1, zi)]),
-        0.5 * (_data[_index(xi + 1, yi, zi + 1)] - _data[_index(xi - 1, yi, zi + 1)]),
-        0.5 * (_data[_index(xi + 2, yi, zi + 1)] - _data[_index(xi, yi, zi + 1)]),
-        0.5 * (_data[_index(xi + 1, yi + 1, zi + 1)] - _data[_index(xi - 1, yi + 1, zi + 1)]),
-        0.5 * (_data[_index(xi + 2, yi + 1, zi + 1)] - _data[_index(xi, yi + 1, zi + 1)]),
+        0.5 * (_data_ptr[_index(xi + 1, yi, zi)] - _data_ptr[_index(xi - 1, yi, zi)]),
+        0.5 * (_data_ptr[_index(xi + 2, yi, zi)] - _data_ptr[_index(xi, yi, zi)]),
+        0.5 * (_data_ptr[_index(xi + 1, yi + 1, zi)] - _data_ptr[_index(xi - 1, yi + 1, zi)]),
+        0.5 * (_data_ptr[_index(xi + 2, yi + 1, zi)] - _data_ptr[_index(xi, yi + 1, zi)]),
+        0.5 * (_data_ptr[_index(xi + 1, yi, zi + 1)] - _data_ptr[_index(xi - 1, yi, zi + 1)]),
+        0.5 * (_data_ptr[_index(xi + 2, yi, zi + 1)] - _data_ptr[_index(xi, yi, zi + 1)]),
+        0.5 * (_data_ptr[_index(xi + 1, yi + 1, zi + 1)] - _data_ptr[_index(xi - 1, yi + 1, zi + 1)]),
+        0.5 * (_data_ptr[_index(xi + 2, yi + 1, zi + 1)] - _data_ptr[_index(xi, yi + 1, zi + 1)]),
         // values of df/dy at each corner.
-        0.5 * (_data[_index(xi, yi + 1, zi)] - _data[_index(xi, yi - 1, zi)]),
-        0.5 * (_data[_index(xi + 1, yi + 1, zi)] - _data[_index(xi + 1, yi - 1, zi)]),
-        0.5 * (_data[_index(xi, yi + 2, zi)] - _data[_index(xi, yi, zi)]),
-        0.5 * (_data[_index(xi + 1, yi + 2, zi)] - _data[_index(xi + 1, yi, zi)]),
-        0.5 * (_data[_index(xi, yi + 1, zi + 1)] - _data[_index(xi, yi - 1, zi + 1)]),
-        0.5 * (_data[_index(xi + 1, yi + 1, zi + 1)] - _data[_index(xi + 1, yi - 1, zi + 1)]),
-        0.5 * (_data[_index(xi, yi + 2, zi + 1)] - _data[_index(xi, yi, zi + 1)]),
-        0.5 * (_data[_index(xi + 1, yi + 2, zi + 1)] - _data[_index(xi + 1, yi, zi + 1)]),
+        0.5 * (_data_ptr[_index(xi, yi + 1, zi)] - _data_ptr[_index(xi, yi - 1, zi)]),
+        0.5 * (_data_ptr[_index(xi + 1, yi + 1, zi)] - _data_ptr[_index(xi + 1, yi - 1, zi)]),
+        0.5 * (_data_ptr[_index(xi, yi + 2, zi)] - _data_ptr[_index(xi, yi, zi)]),
+        0.5 * (_data_ptr[_index(xi + 1, yi + 2, zi)] - _data_ptr[_index(xi + 1, yi, zi)]),
+        0.5 * (_data_ptr[_index(xi, yi + 1, zi + 1)] - _data_ptr[_index(xi, yi - 1, zi + 1)]),
+        0.5 * (_data_ptr[_index(xi + 1, yi + 1, zi + 1)] - _data_ptr[_index(xi + 1, yi - 1, zi + 1)]),
+        0.5 * (_data_ptr[_index(xi, yi + 2, zi + 1)] - _data_ptr[_index(xi, yi, zi + 1)]),
+        0.5 * (_data_ptr[_index(xi + 1, yi + 2, zi + 1)] - _data_ptr[_index(xi + 1, yi, zi + 1)]),
         // values of df/dz at each corner.
-        0.5 * (_data[_index(xi, yi, zi + 1)] - _data[_index(xi, yi, zi - 1)]),
-        0.5 * (_data[_index(xi + 1, yi, zi + 1)] - _data[_index(xi + 1, yi, zi - 1)]),
-        0.5 * (_data[_index(xi, yi + 1, zi + 1)] - _data[_index(xi, yi + 1, zi - 1)]),
-        0.5 * (_data[_index(xi + 1, yi + 1, zi + 1)] - _data[_index(xi + 1, yi + 1, zi - 1)]),
-        0.5 * (_data[_index(xi, yi, zi + 2)] - _data[_index(xi, yi, zi)]),
-        0.5 * (_data[_index(xi + 1, yi, zi + 2)] - _data[_index(xi + 1, yi, zi)]),
-        0.5 * (_data[_index(xi, yi + 1, zi + 2)] - _data[_index(xi, yi + 1, zi)]),
-        0.5 * (_data[_index(xi + 1, yi + 1, zi + 2)] - _data[_index(xi + 1, yi + 1, zi)]),
+        0.5 * (_data_ptr[_index(xi, yi, zi + 1)] - _data_ptr[_index(xi, yi, zi - 1)]),
+        0.5 * (_data_ptr[_index(xi + 1, yi, zi + 1)] - _data_ptr[_index(xi + 1, yi, zi - 1)]),
+        0.5 * (_data_ptr[_index(xi, yi + 1, zi + 1)] - _data_ptr[_index(xi, yi + 1, zi - 1)]),
+        0.5 * (_data_ptr[_index(xi + 1, yi + 1, zi + 1)] - _data_ptr[_index(xi + 1, yi + 1, zi - 1)]),
+        0.5 * (_data_ptr[_index(xi, yi, zi + 2)] - _data_ptr[_index(xi, yi, zi)]),
+        0.5 * (_data_ptr[_index(xi + 1, yi, zi + 2)] - _data_ptr[_index(xi + 1, yi, zi)]),
+        0.5 * (_data_ptr[_index(xi, yi + 1, zi + 2)] - _data_ptr[_index(xi, yi + 1, zi)]),
+        0.5 * (_data_ptr[_index(xi + 1, yi + 1, zi + 2)] - _data_ptr[_index(xi + 1, yi + 1, zi)]),
         // values of d2f/dxdy at each corner.
-        0.25 * (_data[_index(xi + 1, yi + 1, zi)] - _data[_index(xi - 1, yi + 1, zi)] - _data[_index(xi + 1, yi - 1, zi)] + _data[_index(xi - 1, yi - 1, zi)]),
-        0.25 * (_data[_index(xi + 2, yi + 1, zi)] - _data[_index(xi, yi + 1, zi)] - _data[_index(xi + 2, yi - 1, zi)] + _data[_index(xi, yi - 1, zi)]),
-        0.25 * (_data[_index(xi + 1, yi + 2, zi)] - _data[_index(xi - 1, yi + 2, zi)] - _data[_index(xi + 1, yi, zi)] + _data[_index(xi - 1, yi, zi)]),
-        0.25 * (_data[_index(xi + 2, yi + 2, zi)] - _data[_index(xi, yi + 2, zi)] - _data[_index(xi + 2, yi, zi)] + _data[_index(xi, yi, zi)]),
-        0.25 * (_data[_index(xi + 1, yi + 1, zi + 1)] - _data[_index(xi - 1, yi + 1, zi + 1)] - _data[_index(xi + 1, yi - 1, zi + 1)] + _data[_index(xi - 1, yi - 1, zi + 1)]),
-        0.25 * (_data[_index(xi + 2, yi + 1, zi + 1)] - _data[_index(xi, yi + 1, zi + 1)] - _data[_index(xi + 2, yi - 1, zi + 1)] + _data[_index(xi, yi - 1, zi + 1)]),
-        0.25 * (_data[_index(xi + 1, yi + 2, zi + 1)] - _data[_index(xi - 1, yi + 2, zi + 1)] - _data[_index(xi + 1, yi, zi + 1)] + _data[_index(xi - 1, yi, zi + 1)]),
-        0.25 * (_data[_index(xi + 2, yi + 2, zi + 1)] - _data[_index(xi, yi + 2, zi + 1)] - _data[_index(xi + 2, yi, zi + 1)] + _data[_index(xi, yi, zi + 1)]),
+        0.25 * (_data_ptr[_index(xi + 1, yi + 1, zi)] - _data_ptr[_index(xi - 1, yi + 1, zi)] - _data_ptr[_index(xi + 1, yi - 1, zi)] + _data_ptr[_index(xi - 1, yi - 1, zi)]),
+        0.25 * (_data_ptr[_index(xi + 2, yi + 1, zi)] - _data_ptr[_index(xi, yi + 1, zi)] - _data_ptr[_index(xi + 2, yi - 1, zi)] + _data_ptr[_index(xi, yi - 1, zi)]),
+        0.25 * (_data_ptr[_index(xi + 1, yi + 2, zi)] - _data_ptr[_index(xi - 1, yi + 2, zi)] - _data_ptr[_index(xi + 1, yi, zi)] + _data_ptr[_index(xi - 1, yi, zi)]),
+        0.25 * (_data_ptr[_index(xi + 2, yi + 2, zi)] - _data_ptr[_index(xi, yi + 2, zi)] - _data_ptr[_index(xi + 2, yi, zi)] + _data_ptr[_index(xi, yi, zi)]),
+        0.25 * (_data_ptr[_index(xi + 1, yi + 1, zi + 1)] - _data_ptr[_index(xi - 1, yi + 1, zi + 1)] - _data_ptr[_index(xi + 1, yi - 1, zi + 1)] + _data_ptr[_index(xi - 1, yi - 1, zi + 1)]),
+        0.25 * (_data_ptr[_index(xi + 2, yi + 1, zi + 1)] - _data_ptr[_index(xi, yi + 1, zi + 1)] - _data_ptr[_index(xi + 2, yi - 1, zi + 1)] + _data_ptr[_index(xi, yi - 1, zi + 1)]),
+        0.25 * (_data_ptr[_index(xi + 1, yi + 2, zi + 1)] - _data_ptr[_index(xi - 1, yi + 2, zi + 1)] - _data_ptr[_index(xi + 1, yi, zi + 1)] + _data_ptr[_index(xi - 1, yi, zi + 1)]),
+        0.25 * (_data_ptr[_index(xi + 2, yi + 2, zi + 1)] - _data_ptr[_index(xi, yi + 2, zi + 1)] - _data_ptr[_index(xi + 2, yi, zi + 1)] + _data_ptr[_index(xi, yi, zi + 1)]),
         // values of d2f/dxdz at each corner.
-        0.25 * (_data[_index(xi + 1, yi, zi + 1)] - _data[_index(xi - 1, yi, zi + 1)] - _data[_index(xi + 1, yi, zi - 1)] + _data[_index(xi - 1, yi, zi - 1)]),
-        0.25 * (_data[_index(xi + 2, yi, zi + 1)] - _data[_index(xi, yi, zi + 1)] - _data[_index(xi + 2, yi, zi - 1)] + _data[_index(xi, yi, zi - 1)]),
-        0.25 * (_data[_index(xi + 1, yi + 1, zi + 1)] - _data[_index(xi - 1, yi + 1, zi + 1)] - _data[_index(xi + 1, yi + 1, zi - 1)] + _data[_index(xi - 1, yi + 1, zi - 1)]),
-        0.25 * (_data[_index(xi + 2, yi + 1, zi + 1)] - _data[_index(xi, yi + 1, zi + 1)] - _data[_index(xi + 2, yi + 1, zi - 1)] + _data[_index(xi, yi + 1, zi - 1)]),
-        0.25 * (_data[_index(xi + 1, yi, zi + 2)] - _data[_index(xi - 1, yi, zi + 2)] - _data[_index(xi + 1, yi, zi)] + _data[_index(xi - 1, yi, zi)]),
-        0.25 * (_data[_index(xi + 2, yi, zi + 2)] - _data[_index(xi, yi, zi + 2)] - _data[_index(xi + 2, yi, zi)] + _data[_index(xi, yi, zi)]),
-        0.25 * (_data[_index(xi + 1, yi + 1, zi + 2)] - _data[_index(xi - 1, yi + 1, zi + 2)] - _data[_index(xi + 1, yi + 1, zi)] + _data[_index(xi - 1, yi + 1, zi)]),
-        0.25 * (_data[_index(xi + 2, yi + 1, zi + 2)] - _data[_index(xi, yi + 1, zi + 2)] - _data[_index(xi + 2, yi + 1, zi)] + _data[_index(xi, yi + 1, zi)]),
+        0.25 * (_data_ptr[_index(xi + 1, yi, zi + 1)] - _data_ptr[_index(xi - 1, yi, zi + 1)] - _data_ptr[_index(xi + 1, yi, zi - 1)] + _data_ptr[_index(xi - 1, yi, zi - 1)]),
+        0.25 * (_data_ptr[_index(xi + 2, yi, zi + 1)] - _data_ptr[_index(xi, yi, zi + 1)] - _data_ptr[_index(xi + 2, yi, zi - 1)] + _data_ptr[_index(xi, yi, zi - 1)]),
+        0.25 * (_data_ptr[_index(xi + 1, yi + 1, zi + 1)] - _data_ptr[_index(xi - 1, yi + 1, zi + 1)] - _data_ptr[_index(xi + 1, yi + 1, zi - 1)] + _data_ptr[_index(xi - 1, yi + 1, zi - 1)]),
+        0.25 * (_data_ptr[_index(xi + 2, yi + 1, zi + 1)] - _data_ptr[_index(xi, yi + 1, zi + 1)] - _data_ptr[_index(xi + 2, yi + 1, zi - 1)] + _data_ptr[_index(xi, yi + 1, zi - 1)]),
+        0.25 * (_data_ptr[_index(xi + 1, yi, zi + 2)] - _data_ptr[_index(xi - 1, yi, zi + 2)] - _data_ptr[_index(xi + 1, yi, zi)] + _data_ptr[_index(xi - 1, yi, zi)]),
+        0.25 * (_data_ptr[_index(xi + 2, yi, zi + 2)] - _data_ptr[_index(xi, yi, zi + 2)] - _data_ptr[_index(xi + 2, yi, zi)] + _data_ptr[_index(xi, yi, zi)]),
+        0.25 * (_data_ptr[_index(xi + 1, yi + 1, zi + 2)] - _data_ptr[_index(xi - 1, yi + 1, zi + 2)] - _data_ptr[_index(xi + 1, yi + 1, zi)] + _data_ptr[_index(xi - 1, yi + 1, zi)]),
+        0.25 * (_data_ptr[_index(xi + 2, yi + 1, zi + 2)] - _data_ptr[_index(xi, yi + 1, zi + 2)] - _data_ptr[_index(xi + 2, yi + 1, zi)] + _data_ptr[_index(xi, yi + 1, zi)]),
         // values of d2f/dydz at each corner.
-        0.25 * (_data[_index(xi, yi + 1, zi + 1)] - _data[_index(xi, yi - 1, zi + 1)] - _data[_index(xi, yi + 1, zi - 1)] + _data[_index(xi, yi - 1, zi - 1)]),
-        0.25 * (_data[_index(xi + 1, yi + 1, zi + 1)] - _data[_index(xi + 1, yi - 1, zi + 1)] - _data[_index(xi + 1, yi + 1, zi - 1)] + _data[_index(xi + 1, yi - 1, zi - 1)]),
-        0.25 * (_data[_index(xi, yi + 2, zi + 1)] - _data[_index(xi, yi, zi + 1)] - _data[_index(xi, yi + 2, zi - 1)] + _data[_index(xi, yi, zi - 1)]),
-        0.25 * (_data[_index(xi + 1, yi + 2, zi + 1)] - _data[_index(xi + 1, yi, zi + 1)] - _data[_index(xi + 1, yi + 2, zi - 1)] + _data[_index(xi + 1, yi, zi - 1)]),
-        0.25 * (_data[_index(xi, yi + 1, zi + 2)] - _data[_index(xi, yi - 1, zi + 2)] - _data[_index(xi, yi + 1, zi)] + _data[_index(xi, yi - 1, zi)]),
-        0.25 * (_data[_index(xi + 1, yi + 1, zi + 2)] - _data[_index(xi + 1, yi - 1, zi + 2)] - _data[_index(xi + 1, yi + 1, zi)] + _data[_index(xi + 1, yi - 1, zi)]),
-        0.25 * (_data[_index(xi, yi + 2, zi + 2)] - _data[_index(xi, yi, zi + 2)] - _data[_index(xi, yi + 2, zi)] + _data[_index(xi, yi, zi)]),
-        0.25 * (_data[_index(xi + 1, yi + 2, zi + 2)] - _data[_index(xi + 1, yi, zi + 2)] - _data[_index(xi + 1, yi + 2, zi)] + _data[_index(xi + 1, yi, zi)]),
+        0.25 * (_data_ptr[_index(xi, yi + 1, zi + 1)] - _data_ptr[_index(xi, yi - 1, zi + 1)] - _data_ptr[_index(xi, yi + 1, zi - 1)] + _data_ptr[_index(xi, yi - 1, zi - 1)]),
+        0.25 * (_data_ptr[_index(xi + 1, yi + 1, zi + 1)] - _data_ptr[_index(xi + 1, yi - 1, zi + 1)] - _data_ptr[_index(xi + 1, yi + 1, zi - 1)] + _data_ptr[_index(xi + 1, yi - 1, zi - 1)]),
+        0.25 * (_data_ptr[_index(xi, yi + 2, zi + 1)] - _data_ptr[_index(xi, yi, zi + 1)] - _data_ptr[_index(xi, yi + 2, zi - 1)] + _data_ptr[_index(xi, yi, zi - 1)]),
+        0.25 * (_data_ptr[_index(xi + 1, yi + 2, zi + 1)] - _data_ptr[_index(xi + 1, yi, zi + 1)] - _data_ptr[_index(xi + 1, yi + 2, zi - 1)] + _data_ptr[_index(xi + 1, yi, zi - 1)]),
+        0.25 * (_data_ptr[_index(xi, yi + 1, zi + 2)] - _data_ptr[_index(xi, yi - 1, zi + 2)] - _data_ptr[_index(xi, yi + 1, zi)] + _data_ptr[_index(xi, yi - 1, zi)]),
+        0.25 * (_data_ptr[_index(xi + 1, yi + 1, zi + 2)] - _data_ptr[_index(xi + 1, yi - 1, zi + 2)] - _data_ptr[_index(xi + 1, yi + 1, zi)] + _data_ptr[_index(xi + 1, yi - 1, zi)]),
+        0.25 * (_data_ptr[_index(xi, yi + 2, zi + 2)] - _data_ptr[_index(xi, yi, zi + 2)] - _data_ptr[_index(xi, yi + 2, zi)] + _data_ptr[_index(xi, yi, zi)]),
+        0.25 * (_data_ptr[_index(xi + 1, yi + 2, zi + 2)] - _data_ptr[_index(xi + 1, yi, zi + 2)] - _data_ptr[_index(xi + 1, yi + 2, zi)] + _data_ptr[_index(xi + 1, yi, zi)]),
         // values of d3f/dxdydz at each corner.
-        0.125 * (_data[_index(xi + 1, yi + 1, zi + 1)] - _data[_index(xi - 1, yi + 1, zi + 1)] - _data[_index(xi + 1, yi - 1, zi + 1)] + _data[_index(xi - 1, yi - 1, zi + 1)] - _data[_index(xi + 1, yi + 1, zi - 1)] + _data[_index(xi - 1, yi + 1, zi - 1)] + _data[_index(xi + 1, yi - 1, zi - 1)] - _data[_index(xi - 1, yi - 1, zi - 1)]),
-        0.125 * (_data[_index(xi + 2, yi + 1, zi + 1)] - _data[_index(xi, yi + 1, zi + 1)] - _data[_index(xi + 2, yi - 1, zi + 1)] + _data[_index(xi, yi - 1, zi + 1)] - _data[_index(xi + 2, yi + 1, zi - 1)] + _data[_index(xi, yi + 1, zi - 1)] + _data[_index(xi + 2, yi - 1, zi - 1)] - _data[_index(xi, yi - 1, zi - 1)]),
-        0.125 * (_data[_index(xi + 1, yi + 2, zi + 1)] - _data[_index(xi - 1, yi + 2, zi + 1)] - _data[_index(xi + 1, yi, zi + 1)] + _data[_index(xi - 1, yi, zi + 1)] - _data[_index(xi + 1, yi + 2, zi - 1)] + _data[_index(xi - 1, yi + 2, zi - 1)] + _data[_index(xi + 1, yi, zi - 1)] - _data[_index(xi - 1, yi, zi - 1)]),
-        0.125 * (_data[_index(xi + 2, yi + 2, zi + 1)] - _data[_index(xi, yi + 2, zi + 1)] - _data[_index(xi + 2, yi, zi + 1)] + _data[_index(xi, yi, zi + 1)] - _data[_index(xi + 2, yi + 2, zi - 1)] + _data[_index(xi, yi + 2, zi - 1)] + _data[_index(xi + 2, yi, zi - 1)] - _data[_index(xi, yi, zi - 1)]),
-        0.125 * (_data[_index(xi + 1, yi + 1, zi + 2)] - _data[_index(xi - 1, yi + 1, zi + 2)] - _data[_index(xi + 1, yi - 1, zi + 2)] + _data[_index(xi - 1, yi - 1, zi + 2)] - _data[_index(xi + 1, yi + 1, zi)] + _data[_index(xi - 1, yi + 1, zi)] + _data[_index(xi + 1, yi - 1, zi)] - _data[_index(xi - 1, yi - 1, zi)]),
-        0.125 * (_data[_index(xi + 2, yi + 1, zi + 2)] - _data[_index(xi, yi + 1, zi + 2)] - _data[_index(xi + 2, yi - 1, zi + 2)] + _data[_index(xi, yi - 1, zi + 2)] - _data[_index(xi + 2, yi + 1, zi)] + _data[_index(xi, yi + 1, zi)] + _data[_index(xi + 2, yi - 1, zi)] - _data[_index(xi, yi - 1, zi)]),
-        0.125 * (_data[_index(xi + 1, yi + 2, zi + 2)] - _data[_index(xi - 1, yi + 2, zi + 2)] - _data[_index(xi + 1, yi, zi + 2)] + _data[_index(xi - 1, yi, zi + 2)] - _data[_index(xi + 1, yi + 2, zi)] + _data[_index(xi - 1, yi + 2, zi)] + _data[_index(xi + 1, yi, zi)] - _data[_index(xi - 1, yi, zi)]),
-        0.125 * (_data[_index(xi + 2, yi + 2, zi + 2)] - _data[_index(xi, yi + 2, zi + 2)] - _data[_index(xi + 2, yi, zi + 2)] + _data[_index(xi, yi, zi + 2)] - _data[_index(xi + 2, yi + 2, zi)] + _data[_index(xi, yi + 2, zi)] + _data[_index(xi + 2, yi, zi)] - _data[_index(xi, yi, zi)]);
+        0.125 * (_data_ptr[_index(xi + 1, yi + 1, zi + 1)] - _data_ptr[_index(xi - 1, yi + 1, zi + 1)] - _data_ptr[_index(xi + 1, yi - 1, zi + 1)] + _data_ptr[_index(xi - 1, yi - 1, zi + 1)] - _data_ptr[_index(xi + 1, yi + 1, zi - 1)] + _data_ptr[_index(xi - 1, yi + 1, zi - 1)] + _data_ptr[_index(xi + 1, yi - 1, zi - 1)] - _data_ptr[_index(xi - 1, yi - 1, zi - 1)]),
+        0.125 * (_data_ptr[_index(xi + 2, yi + 1, zi + 1)] - _data_ptr[_index(xi, yi + 1, zi + 1)] - _data_ptr[_index(xi + 2, yi - 1, zi + 1)] + _data_ptr[_index(xi, yi - 1, zi + 1)] - _data_ptr[_index(xi + 2, yi + 1, zi - 1)] + _data_ptr[_index(xi, yi + 1, zi - 1)] + _data_ptr[_index(xi + 2, yi - 1, zi - 1)] - _data_ptr[_index(xi, yi - 1, zi - 1)]),
+        0.125 * (_data_ptr[_index(xi + 1, yi + 2, zi + 1)] - _data_ptr[_index(xi - 1, yi + 2, zi + 1)] - _data_ptr[_index(xi + 1, yi, zi + 1)] + _data_ptr[_index(xi - 1, yi, zi + 1)] - _data_ptr[_index(xi + 1, yi + 2, zi - 1)] + _data_ptr[_index(xi - 1, yi + 2, zi - 1)] + _data_ptr[_index(xi + 1, yi, zi - 1)] - _data_ptr[_index(xi - 1, yi, zi - 1)]),
+        0.125 * (_data_ptr[_index(xi + 2, yi + 2, zi + 1)] - _data_ptr[_index(xi, yi + 2, zi + 1)] - _data_ptr[_index(xi + 2, yi, zi + 1)] + _data_ptr[_index(xi, yi, zi + 1)] - _data_ptr[_index(xi + 2, yi + 2, zi - 1)] + _data_ptr[_index(xi, yi + 2, zi - 1)] + _data_ptr[_index(xi + 2, yi, zi - 1)] - _data_ptr[_index(xi, yi, zi - 1)]),
+        0.125 * (_data_ptr[_index(xi + 1, yi + 1, zi + 2)] - _data_ptr[_index(xi - 1, yi + 1, zi + 2)] - _data_ptr[_index(xi + 1, yi - 1, zi + 2)] + _data_ptr[_index(xi - 1, yi - 1, zi + 2)] - _data_ptr[_index(xi + 1, yi + 1, zi)] + _data_ptr[_index(xi - 1, yi + 1, zi)] + _data_ptr[_index(xi + 1, yi - 1, zi)] - _data_ptr[_index(xi - 1, yi - 1, zi)]),
+        0.125 * (_data_ptr[_index(xi + 2, yi + 1, zi + 2)] - _data_ptr[_index(xi, yi + 1, zi + 2)] - _data_ptr[_index(xi + 2, yi - 1, zi + 2)] + _data_ptr[_index(xi, yi - 1, zi + 2)] - _data_ptr[_index(xi + 2, yi + 1, zi)] + _data_ptr[_index(xi, yi + 1, zi)] + _data_ptr[_index(xi + 2, yi - 1, zi)] - _data_ptr[_index(xi, yi - 1, zi)]),
+        0.125 * (_data_ptr[_index(xi + 1, yi + 2, zi + 2)] - _data_ptr[_index(xi - 1, yi + 2, zi + 2)] - _data_ptr[_index(xi + 1, yi, zi + 2)] + _data_ptr[_index(xi - 1, yi, zi + 2)] - _data_ptr[_index(xi + 1, yi + 2, zi)] + _data_ptr[_index(xi - 1, yi + 2, zi)] + _data_ptr[_index(xi + 1, yi, zi)] - _data_ptr[_index(xi - 1, yi, zi)]),
+        0.125 * (_data_ptr[_index(xi + 2, yi + 2, zi + 2)] - _data_ptr[_index(xi, yi + 2, zi + 2)] - _data_ptr[_index(xi + 2, yi, zi + 2)] + _data_ptr[_index(xi, yi, zi + 2)] - _data_ptr[_index(xi + 2, yi + 2, zi)] + _data_ptr[_index(xi, yi + 2, zi)] + _data_ptr[_index(xi + 2, yi, zi)] - _data_ptr[_index(xi, yi, zi)]);
     // Convert voxel values and partial derivatives to interpolation coefficients.
     _coefs = _C * x;
     // Remember this voxel for next time.
@@ -211,7 +211,7 @@ fptype TriCubicInterpolator::ip(py::list xyz)
 
 PYBIND11_MODULE(tricubic, m) 
 {
-  m.doc = "Tricubic interpolation module for python.";
+  m.doc() = "Tricubic interpolation module for python.";
 
   py::class_<TriCubicInterpolator>(m, "tricubic")
     .def(py::init<py::list, py::list>())

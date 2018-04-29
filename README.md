@@ -26,7 +26,7 @@ Installing pytricubic is as easy as:
   mkdir build  
   cd build  
   cmake ../  
-  cmake --build ../  
+  make  
 
 ## 1. Usage
 

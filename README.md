@@ -12,7 +12,13 @@ The tricubic interpolation scheme is described in:
                               In: International Journal for Numerical Methods
                               in Engineering (2005), No. 63, p. 455-471
 
-## 0. Building
+Installing pytricubic now only requires CMake being installed and typing:  
+
+pip install tricubic
+
+A manual build process is not necessary if you just want to use library.
+
+## 0. Building manually
 
 This chapter assumes that you are working in a standard Linux environment with
 tools like g++ and cmake already installed. The template libraries Eigen3 for

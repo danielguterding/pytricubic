@@ -99,5 +99,6 @@ setup(
     ext_modules=[CMakeExtension('tricubic')],
     # add custom build_ext command
     cmdclass=dict(build_ext=CMakeBuild, test=CatchTestCommand),
-    zip_safe=False
+    zip_safe=False,
+    description="A tricubic interpolation module for python."
 )

@@ -89,7 +89,7 @@ class CatchTestCommand(TestCommand):
 setup(
     # Information
     name = "tricubic",
-    version = "1.0.0",
+    version = "1.0.1",
     url = "https://github.com/danielguterding/pytricubic",
     author = "Daniel Guterding",
     author_email = "daniel.guterding@gmail.com",

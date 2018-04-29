@@ -1,0 +1,6 @@
+include CMakeLists.txt
+include LICENSE
+recursive-include include/ *
+recursive-include src/ *
+recursive-include thirdparty/ *  
+recursive-include tests/ *.py

@@ -66,6 +66,26 @@ class CMakeBuild(build_ext):
                               cwd=self.build_temp)
         print()  # Add an empty line for cleaner output
 
+from setuptools.command.test import test as TestCommand
+
+class CatchTestCommand(TestCommand):
+    def distutils_dir_name(self, dname):
+        """Returns the name of a distutils build directory"""
+        dir_name = "{dirname}.{platform}-{version[0]}.{version[1]}"
+        return dir_name.format(dirname=dname,
+                               platform=sysconfig.get_platform(),
+                               version=sys.version_info)
+
+    #def run(self):
+    #    # Run Python tests
+    #    super(CatchTestCommand, self).run()
+    #    print("\nPython tests complete, now running C++ tests...\n")
+    #    # Run catch tests
+    #    subprocess.call(['./*_test'],
+    #                    cwd=os.path.join('build',
+    #                                     self.distutils_dir_name('temp')),
+    #                    shell=True)
+
 setup(
     # Information
     name = "tricubic",
@@ -78,6 +98,6 @@ setup(
     # add extension module
     ext_modules=[CMakeExtension('tricubic')],
     # add custom build_ext command
-    cmdclass=dict(build_ext=CMakeBuild),
+    cmdclass=dict(build_ext=CMakeBuild, test=CatchTestCommand),
     zip_safe=False
 )

@@ -17,6 +17,7 @@ class TriCubicInterpolator
   // Based on http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.89.7835
 public:
   TriCubicInterpolator(py::list data, py::list nkpoints);
+  ~TriCubicInterpolator();
   fptype ip(py::list xyz);
 private:
   fptype *_data_ptr;

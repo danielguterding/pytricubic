@@ -92,6 +92,11 @@ TriCubicInterpolator::TriCubicInterpolator(py::list data, py::list nkpoints)
       _C(i, j) = temp[i][j];
 }
 
+TriCubicInterpolator::~TriCubicInterpolator()
+{
+  delete _data_ptr;
+}
+
 fptype TriCubicInterpolator::ip(py::list xyz)
 {
 

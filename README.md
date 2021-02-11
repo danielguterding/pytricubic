@@ -8,11 +8,11 @@ the linear algebra template library Eigen.
 
 The tricubic interpolation scheme is described in:
 
-  Lekien, F. and Marsden, J.: Tricubic interpolation in three dimensions.
+  [Lekien, F. and Marsden, J.: Tricubic interpolation in three dimensions.
                               In: International Journal for Numerical Methods
-                              in Engineering (2005), No. 63, p. 455-471
+                              in Engineering (2005), No. 63, p. 455-471](http://www.cds.caltech.edu/~marsden/bib/2005/08-LeMa2005/LeMa2005.pdf)
 
-Installing pytricubic now only requires CMake being installed and typing:  
+Installing pytricubic only requires CMake being installed and typing:  
 
 pip install tricubic
 

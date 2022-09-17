@@ -97,7 +97,6 @@ setup(
     long_description_content_type="text/markdown",
     setup_requires=[
         'cmake',
-        'setuptools>=18.0',
     ],
     license = "MIT",
     keywords = "tricubic cubic interpolation",

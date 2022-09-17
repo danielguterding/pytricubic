@@ -14,7 +14,9 @@ The tricubic interpolation scheme is described in:
 
 Installing pytricubic only requires CMake being installed and typing:  
 
+```
 pip install tricubic
+```
 
 A manual build process is not necessary if you just want to use library.
 
@@ -27,12 +29,14 @@ subfolder. Threfore, no external requirements exist.
 
 Installing pytricubic is as easy as:  
 
-  git clone git://github.com/danielguterding/pytricubic.git  
-  cd pytricubic  
-  mkdir build  
-  cd build  
-  cmake ../  
-  make  
+```
+git clone git://github.com/danielguterding/pytricubic.git  
+cd pytricubic  
+mkdir build  
+cd build  
+cmake ../  
+make  
+```
 
 ## 1. Usage
 

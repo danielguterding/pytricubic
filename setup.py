@@ -89,10 +89,15 @@ class CatchTestCommand(TestCommand):
 setup(
     # Information
     name = "tricubic",
-    version = "1.0.2",
+    version = "1.0.3",
     url = "https://github.com/danielguterding/pytricubic",
     author = "Daniel Guterding",
     author_email = "daniel.guterding@gmail.com",
+    long_description=open("./README.md", 'r').read(),
+    long_description_content_type="text/markdown",
+    setup_requires=[
+        'cmake',
+    ],
     license = "MIT",
     keywords = "tricubic cubic interpolation",
     # add extension module

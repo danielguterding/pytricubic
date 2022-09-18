@@ -1,3 +1,5 @@
+PROJECT(pytricubic)
+
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.12)
 
 SET(EIGEN3_INCLUDE_DIR "thirdparty/eigen3")

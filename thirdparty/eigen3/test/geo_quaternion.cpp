@@ -231,6 +231,27 @@ template<typename Scalar> void mapQuaternion(void){
   VERIFY_IS_APPROX(mq3*mq2, q3*q2);
   VERIFY_IS_APPROX(mcq1*mq2, q1*q2);
   VERIFY_IS_APPROX(mcq3*mq2, q3*q2);
+
+  // Bug 1461, compilation issue with Map<const Quat>::w(), and other reference/constness checks:
+  VERIFY_IS_APPROX(mcq3.coeffs().x() + mcq3.coeffs().y() + mcq3.coeffs().z() + mcq3.coeffs().w(), mcq3.coeffs().sum());
+  VERIFY_IS_APPROX(mcq3.x() + mcq3.y() + mcq3.z() + mcq3.w(), mcq3.coeffs().sum());
+  mq3.w() = 1;
+  const Quaternionx& cq3(q3);
+  VERIFY( &cq3.x() == &q3.x() );
+  const MQuaternionUA& cmq3(mq3);
+  VERIFY( &cmq3.x() == &mq3.x() );
+  // FIXME the following should be ok. The problem is that currently the LValueBit flag
+  // is used to determine wether we can return a coeff by reference or not, which is not enough for Map<const ...>.
+  //const MCQuaternionUA& cmcq3(mcq3);
+  //VERIFY( &cmcq3.x() == &mcq3.x() );
+
+  // test cast
+  {
+    Quaternion<float> q1f = mq1.template cast<float>();
+    VERIFY_IS_APPROX(q1f.template cast<Scalar>(),mq1);
+    Quaternion<double> q1d = mq1.template cast<double>();
+    VERIFY_IS_APPROX(q1d.template cast<Scalar>(),mq1);
+  }
 }
 
 template<typename Scalar> void quaternionAlignment(void){

@@ -11,7 +11,6 @@
 
 template<typename ArrayType> void array(const ArrayType& m)
 {
-  typedef typename ArrayType::Index Index;
   typedef typename ArrayType::Scalar Scalar;
   typedef typename ArrayType::RealScalar RealScalar;
   typedef Array<Scalar, ArrayType::RowsAtCompileTime, 1> ColVectorType;
@@ -130,7 +129,6 @@ template<typename ArrayType> void array(const ArrayType& m)
 template<typename ArrayType> void comparisons(const ArrayType& m)
 {
   using std::abs;
-  typedef typename ArrayType::Index Index;
   typedef typename ArrayType::Scalar Scalar;
   typedef typename NumTraits<Scalar>::Real RealScalar;
 
@@ -208,7 +206,6 @@ template<typename ArrayType> void array_real(const ArrayType& m)
 {
   using std::abs;
   using std::sqrt;
-  typedef typename ArrayType::Index Index;
   typedef typename ArrayType::Scalar Scalar;
   typedef typename NumTraits<Scalar>::Real RealScalar;
 
@@ -282,7 +279,7 @@ template<typename ArrayType> void array_real(const ArrayType& m)
   VERIFY_IS_APPROX(m1.sign() * m1.abs(), m1);
 
   VERIFY_IS_APPROX(numext::abs2(numext::real(m1)) + numext::abs2(numext::imag(m1)), numext::abs2(m1));
-  VERIFY_IS_APPROX(numext::abs2(real(m1)) + numext::abs2(imag(m1)), numext::abs2(m1));
+  VERIFY_IS_APPROX(numext::abs2(Eigen::real(m1)) + numext::abs2(Eigen::imag(m1)), numext::abs2(m1));
   if(!NumTraits<Scalar>::IsComplex)
     VERIFY_IS_APPROX(numext::real(m1), m1);
 
@@ -319,7 +316,6 @@ template<typename ArrayType> void array_real(const ArrayType& m)
 
 template<typename ArrayType> void array_complex(const ArrayType& m)
 {
-  typedef typename ArrayType::Index Index;
   typedef typename ArrayType::Scalar Scalar;
   typedef typename NumTraits<Scalar>::Real RealScalar;
 
@@ -372,7 +368,7 @@ template<typename ArrayType> void array_complex(const ArrayType& m)
 
   for (Index i = 0; i < m.rows(); ++i)
     for (Index j = 0; j < m.cols(); ++j)
-      m3(i,j) = std::atan2(imag(m1(i,j)), real(m1(i,j)));
+      m3(i,j) = std::atan2(m1(i,j).imag(), m1(i,j).real());
   VERIFY_IS_APPROX(arg(m1), m3);
 
   std::complex<RealScalar> zero(0.0,0.0);
@@ -399,7 +395,7 @@ template<typename ArrayType> void array_complex(const ArrayType& m)
 
   VERIFY_IS_APPROX(inverse(inverse(m1)),m1);
   VERIFY_IS_APPROX(conj(m1.conjugate()), m1);
-  VERIFY_IS_APPROX(abs(m1), sqrt(square(real(m1))+square(imag(m1))));
+  VERIFY_IS_APPROX(abs(m1), sqrt(square(m1.real())+square(m1.imag())));
   VERIFY_IS_APPROX(abs(m1), sqrt(abs2(m1)));
   VERIFY_IS_APPROX(log10(m1), log(m1)/log(10));
 
@@ -424,7 +420,6 @@ template<typename ArrayType> void array_complex(const ArrayType& m)
 
 template<typename ArrayType> void min_max(const ArrayType& m)
 {
-  typedef typename ArrayType::Index Index;
   typedef typename ArrayType::Scalar Scalar;
 
   Index rows = m.rows();
@@ -451,7 +446,7 @@ template<typename ArrayType> void min_max(const ArrayType& m)
 
 }
 
-void test_array()
+void test_array_cwise()
 {
   for(int i = 0; i < g_repeat; i++) {
     CALL_SUBTEST_1( array(Array<float, 1, 1>()) );

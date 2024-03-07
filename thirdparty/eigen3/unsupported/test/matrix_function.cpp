@@ -25,7 +25,6 @@ inline bool test_isApprox_abs(const Type1& a, const Type2& b)
 template<typename MatrixType>
 MatrixType randomMatrixWithRealEivals(const typename MatrixType::Index size)
 {
-  typedef typename MatrixType::Index Index;
   typedef typename MatrixType::Scalar Scalar;
   typedef typename MatrixType::RealScalar RealScalar;
   MatrixType diag = MatrixType::Zero(size, size);
@@ -51,7 +50,6 @@ struct randomMatrixWithImagEivals<MatrixType, 0>
 {
   static MatrixType run(const typename MatrixType::Index size)
   {
-    typedef typename MatrixType::Index Index;
     typedef typename MatrixType::Scalar Scalar;
     MatrixType diag = MatrixType::Zero(size, size);
     Index i = 0;
@@ -79,7 +77,6 @@ struct randomMatrixWithImagEivals<MatrixType, 1>
 {
   static MatrixType run(const typename MatrixType::Index size)
   {
-    typedef typename MatrixType::Index Index;
     typedef typename MatrixType::Scalar Scalar;
     typedef typename MatrixType::RealScalar RealScalar;
     const Scalar imagUnit(0, 1);
@@ -171,7 +168,6 @@ void testMatrixType(const MatrixType& m)
 {
   // Matrices with clustered eigenvalue lead to different code paths
   // in MatrixFunction.h and are thus useful for testing.
-  typedef typename MatrixType::Index Index;
 
   const Index size = m.rows();
   for (int i = 0; i < g_repeat; i++) {
@@ -180,6 +176,39 @@ void testMatrixType(const MatrixType& m)
     testMatrix(randomMatrixWithImagEivals<MatrixType>::run(size));
   }
 }
+
+template<typename MatrixType>
+void testMapRef(const MatrixType& A)
+{
+  // Test if passing Ref and Map objects is possible
+  // (Regression test for Bug #1796)
+  Index size = A.rows();
+  MatrixType X; X.setRandom(size, size);
+  MatrixType Y(size,size);
+  Ref<      MatrixType> R(Y);
+  Ref<const MatrixType> Rc(X);
+  Map<      MatrixType> M(Y.data(), size, size);
+  Map<const MatrixType> Mc(X.data(), size, size);
+
+  X = X*X; // make sure sqrt is possible
+  Y = X.sqrt();
+  R = Rc.sqrt();
+  M = Mc.sqrt();
+  Y = X.exp();
+  R = Rc.exp();
+  M = Mc.exp();
+  X = Y; // make sure log is possible
+  Y = X.log();
+  R = Rc.log();
+  M = Mc.log();
+
+  Y = X.cos() + Rc.cos() + Mc.cos();
+  Y = X.sin() + Rc.sin() + Mc.sin();
+
+  Y = X.cosh() + Rc.cosh() + Mc.cosh();
+  Y = X.sinh() + Rc.sinh() + Mc.sinh();
+}
+
 
 void test_matrix_function()
 {
@@ -190,4 +219,9 @@ void test_matrix_function()
   CALL_SUBTEST_5(testMatrixType(Matrix<double,5,5,RowMajor>()));
   CALL_SUBTEST_6(testMatrixType(Matrix4cd()));
   CALL_SUBTEST_7(testMatrixType(MatrixXd(13,13)));
+
+  CALL_SUBTEST_1(testMapRef(Matrix<float,1,1>()));
+  CALL_SUBTEST_2(testMapRef(Matrix3cf()));
+  CALL_SUBTEST_3(testMapRef(MatrixXf(8,8)));
+  CALL_SUBTEST_7(testMapRef(MatrixXd(13,13)));
 }

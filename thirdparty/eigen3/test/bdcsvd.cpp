@@ -28,9 +28,13 @@
 template<typename MatrixType>
 void bdcsvd(const MatrixType& a = MatrixType(), bool pickrandom = true)
 {
-  MatrixType m = a;
-  if(pickrandom)
+  MatrixType m;
+  if(pickrandom) {
+    m.resizeLike(a);
     svd_fill_random(m);
+  }
+  else
+    m = a;
 
   CALL_SUBTEST(( svd_test_all_computation_options<BDCSVD<MatrixType> >(m, false)  ));
 }
@@ -104,7 +108,8 @@ void test_bdcsvd()
   CALL_SUBTEST_7( BDCSVD<MatrixXf>(10,10) );
 
   // Check that preallocation avoids subsequent mallocs
-  CALL_SUBTEST_9( svd_preallocate<void>() );
+  // Disbaled because not supported by BDCSVD
+  // CALL_SUBTEST_9( svd_preallocate<void>() );
 
   CALL_SUBTEST_2( svd_underoverflow<void>() );
 }

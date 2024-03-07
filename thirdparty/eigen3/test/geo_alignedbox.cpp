@@ -15,8 +15,9 @@
 #include<iostream>
 using namespace std;
 
+// TODO not sure if this is actually still necessary anywhere ...
 template<typename T> EIGEN_DONT_INLINE
-void kill_extra_precision(T& x) { eigen_assert((void*)(&x) != (void*)0); }
+void kill_extra_precision(T& ) {  }
 
 
 template<typename BoxType> void alignedbox(const BoxType& _box)
@@ -24,7 +25,6 @@ template<typename BoxType> void alignedbox(const BoxType& _box)
   /* this test covers the following files:
      AlignedBox.h
   */
-  typedef typename BoxType::Index Index;  
   typedef typename BoxType::Scalar Scalar;
   typedef typename NumTraits<Scalar>::Real RealScalar;
   typedef Matrix<Scalar, BoxType::AmbientDimAtCompileTime, 1> VectorType;
@@ -86,7 +86,6 @@ template<typename BoxType>
 void alignedboxCastTests(const BoxType& _box)
 {
   // casting  
-  typedef typename BoxType::Index Index;
   typedef typename BoxType::Scalar Scalar;
   typedef Matrix<Scalar, BoxType::AmbientDimAtCompileTime, 1> VectorType;
 

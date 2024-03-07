@@ -14,7 +14,6 @@
 template<typename MatrixType> void inverse(const MatrixType& m)
 {
   using std::abs;
-  typedef typename MatrixType::Index Index;
   /* this test covers the following files:
      Inverse.h
   */
@@ -47,7 +46,7 @@ template<typename MatrixType> void inverse(const MatrixType& m)
   //computeInverseAndDetWithCheck tests
   //First: an invertible matrix
   bool invertible;
-  RealScalar det;
+  Scalar det;
 
   m2.setZero();
   m1.computeInverseAndDetWithCheck(m2, det, invertible);
@@ -93,6 +92,22 @@ template<typename MatrixType> void inverse(const MatrixType& m)
   }
 }
 
+template<typename Scalar>
+void inverse_zerosized()
+{
+  Matrix<Scalar,Dynamic,Dynamic> A(0,0);
+  {
+    Matrix<Scalar,0,1> b, x;
+    x = A.inverse() * b;
+  }
+  {
+    Matrix<Scalar,Dynamic,Dynamic> b(0,1), x;
+    x = A.inverse() * b;
+    VERIFY_IS_EQUAL(x.rows(), 0);
+    VERIFY_IS_EQUAL(x.cols(), 1);
+  }
+}
+
 void test_inverse()
 {
   int s = 0;
@@ -106,6 +121,7 @@ void test_inverse()
     s = internal::random<int>(50,320); 
     CALL_SUBTEST_5( inverse(MatrixXf(s,s)) );
     TEST_SET_BUT_UNUSED_VARIABLE(s)
+    CALL_SUBTEST_5( inverse_zerosized<float>() );
     
     s = internal::random<int>(25,100);
     CALL_SUBTEST_6( inverse(MatrixXcd(s,s)) );
@@ -113,5 +129,7 @@ void test_inverse()
     
     CALL_SUBTEST_7( inverse(Matrix4d()) );
     CALL_SUBTEST_7( inverse(Matrix<double,4,4,DontAlign>()) );
+
+    CALL_SUBTEST_8( inverse(Matrix4cd()) );
   }
 }

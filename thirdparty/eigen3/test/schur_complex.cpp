@@ -54,7 +54,8 @@ template<typename MatrixType> void schur(int size = MatrixType::ColsAtCompileTim
   VERIFY_IS_EQUAL(cs3.matrixT(), cs1.matrixT());
   VERIFY_IS_EQUAL(cs3.matrixU(), cs1.matrixU());
   cs3.setMaxIterations(1).compute(A);
-  VERIFY_IS_EQUAL(cs3.info(), size > 1 ? NoConvergence : Success);
+  // The schur decomposition does often converge with a single iteration.
+  // VERIFY_IS_EQUAL(cs3.info(), size > 1 ? NoConvergence : Success);
   VERIFY_IS_EQUAL(cs3.getMaxIterations(), 1);
 
   MatrixType Atriangular = A;
@@ -79,7 +80,7 @@ template<typename MatrixType> void schur(int size = MatrixType::ColsAtCompileTim
   }
 }
 
-void test_schur_complex()
+EIGEN_DECLARE_TEST(schur_complex)
 {
   CALL_SUBTEST_1(( schur<Matrix4cd>() ));
   CALL_SUBTEST_2(( schur<MatrixXcf>(internal::random<int>(1,EIGEN_TEST_MAX_SIZE/4)) ));

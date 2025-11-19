@@ -14,8 +14,8 @@
 template<typename MatrixType>
 void check_stdvector_matrix(const MatrixType& m)
 {
-  typename MatrixType::Index rows = m.rows();
-  typename MatrixType::Index cols = m.cols();
+  Index rows = m.rows();
+  Index cols = m.cols();
   MatrixType x = MatrixType::Random(rows,cols), y = MatrixType::Random(rows,cols);
   std::vector<MatrixType,Eigen::aligned_allocator<MatrixType> > v(10, MatrixType::Zero(rows,cols)), w(20, y);
   v[5] = x;
@@ -52,7 +52,7 @@ void check_stdvector_transform(const TransformType&)
 {
   typedef typename TransformType::MatrixType MatrixType;
   TransformType x(MatrixType::Random()), y(MatrixType::Random());
-  std::vector<TransformType,Eigen::aligned_allocator<TransformType> > v(10), w(20, y);
+  std::vector<TransformType,Eigen::aligned_allocator<TransformType> > v(10, TransformType(MatrixType::Zero())), w(20, y);
   v[5] = x;
   w[6] = v[5];
   VERIFY_IS_APPROX(w[6], v[5]);
@@ -124,10 +124,10 @@ void std_vector_gcc_warning()
 {
   typedef Eigen::Vector3f T;
   std::vector<T, Eigen::aligned_allocator<T> > v;
-  v.push_back(T());
+  v.push_back(T::Zero());
 }
 
-void test_stdvector()
+EIGEN_DECLARE_TEST(stdvector)
 {
   // some non vectorizable fixed sizes
   CALL_SUBTEST_1(check_stdvector_matrix(Vector2f()));

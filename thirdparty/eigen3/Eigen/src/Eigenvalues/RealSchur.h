@@ -190,7 +190,7 @@ template<typename _MatrixType> class RealSchur
     RealSchur& computeFromHessenberg(const HessMatrixType& matrixH, const OrthMatrixType& matrixQ,  bool computeU);
     /** \brief Reports whether previous computation was successful.
       *
-      * \returns \c Success if computation was succesful, \c NoConvergence otherwise.
+      * \returns \c Success if computation was successful, \c NoConvergence otherwise.
       */
     ComputationInfo info() const
     {
@@ -270,8 +270,13 @@ RealSchur<MatrixType>& RealSchur<MatrixType>::compute(const EigenBase<InputType>
   // Step 1. Reduce to Hessenberg form
   m_hess.compute(matrix.derived()/scale);
 
-  // Step 2. Reduce to real Schur form  
-  computeFromHessenberg(m_hess.matrixH(), m_hess.matrixQ(), computeU);
+  // Step 2. Reduce to real Schur form
+  // Note: we copy m_hess.matrixQ() into m_matU here and not in computeFromHessenberg
+  //       to be able to pass our working-space buffer for the Householder to Dense evaluation.
+  m_workspaceVector.resize(matrix.cols());
+  if(computeU)
+    m_hess.matrixQ().evalTo(m_matU, m_workspaceVector);
+  computeFromHessenberg(m_hess.matrixH(), m_matU, computeU);
 
   m_matT *= scale;
   
@@ -284,13 +289,13 @@ RealSchur<MatrixType>& RealSchur<MatrixType>::computeFromHessenberg(const HessMa
   using std::abs;
 
   m_matT = matrixH;
-  if(computeU)
+  m_workspaceVector.resize(m_matT.cols());
+  if(computeU && !internal::is_same_dense(m_matU,matrixQ))
     m_matU = matrixQ;
   
   Index maxIters = m_maxIters;
   if (maxIters == -1)
     maxIters = m_maxIterationsPerRow * matrixH.rows();
-  m_workspaceVector.resize(m_matT.cols());
   Scalar* workspace = &m_workspaceVector.coeffRef(0);
 
   // The matrix m_matT is divided in three parts. 
@@ -430,34 +435,33 @@ inline void RealSchur<MatrixType>::computeShift(Index iu, Index iter, Scalar& ex
   shiftInfo.coeffRef(1) = m_matT.coeff(iu-1,iu-1);
   shiftInfo.coeffRef(2) = m_matT.coeff(iu,iu-1) * m_matT.coeff(iu-1,iu);
 
-  // Wilkinson's original ad hoc shift
-  if (iter == 10)
-  {
-    exshift += shiftInfo.coeff(0);
-    for (Index i = 0; i <= iu; ++i)
-      m_matT.coeffRef(i,i) -= shiftInfo.coeff(0);
-    Scalar s = abs(m_matT.coeff(iu,iu-1)) + abs(m_matT.coeff(iu-1,iu-2));
-    shiftInfo.coeffRef(0) = Scalar(0.75) * s;
-    shiftInfo.coeffRef(1) = Scalar(0.75) * s;
-    shiftInfo.coeffRef(2) = Scalar(-0.4375) * s * s;
-  }
-
-  // MATLAB's new ad hoc shift
-  if (iter == 30)
-  {
-    Scalar s = (shiftInfo.coeff(1) - shiftInfo.coeff(0)) / Scalar(2.0);
-    s = s * s + shiftInfo.coeff(2);
-    if (s > Scalar(0))
-    {
-      s = sqrt(s);
-      if (shiftInfo.coeff(1) < shiftInfo.coeff(0))
-        s = -s;
-      s = s + (shiftInfo.coeff(1) - shiftInfo.coeff(0)) / Scalar(2.0);
-      s = shiftInfo.coeff(0) - shiftInfo.coeff(2) / s;
-      exshift += s;
+  // Alternate exceptional shifting strategy every 16 iterations.
+  if (iter % 16 == 0) {
+    // Wilkinson's original ad hoc shift
+    if (iter % 32 != 0) {
+      exshift += shiftInfo.coeff(0);
       for (Index i = 0; i <= iu; ++i)
-        m_matT.coeffRef(i,i) -= s;
-      shiftInfo.setConstant(Scalar(0.964));
+        m_matT.coeffRef(i,i) -= shiftInfo.coeff(0);
+      Scalar s = abs(m_matT.coeff(iu,iu-1)) + abs(m_matT.coeff(iu-1,iu-2));
+      shiftInfo.coeffRef(0) = Scalar(0.75) * s;
+      shiftInfo.coeffRef(1) = Scalar(0.75) * s;
+      shiftInfo.coeffRef(2) = Scalar(-0.4375) * s * s;
+    } else {
+      // MATLAB's new ad hoc shift
+      Scalar s = (shiftInfo.coeff(1) - shiftInfo.coeff(0)) / Scalar(2.0);
+      s = s * s + shiftInfo.coeff(2);
+      if (s > Scalar(0))
+      {
+        s = sqrt(s);
+        if (shiftInfo.coeff(1) < shiftInfo.coeff(0))
+          s = -s;
+        s = s + (shiftInfo.coeff(1) - shiftInfo.coeff(0)) / Scalar(2.0);
+        s = shiftInfo.coeff(0) - shiftInfo.coeff(2) / s;
+        exshift += s;
+        for (Index i = 0; i <= iu; ++i)
+          m_matT.coeffRef(i,i) -= s;
+        shiftInfo.setConstant(Scalar(0.964));
+      }
     }
   }
 }

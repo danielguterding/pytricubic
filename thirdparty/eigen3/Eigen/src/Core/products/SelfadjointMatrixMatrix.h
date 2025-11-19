@@ -43,16 +43,25 @@ struct symm_pack_lhs
       for(Index w=0; w<BlockRows; w++)
         blockA[count++] = numext::conj(lhs(k, i+w)); // transposed
   }
-  void operator()(Scalar* blockA, const Scalar* _lhs, Index lhsStride, Index cols, Index rows)
+  void operator()(Scalar* blockA, const Scalar* lhs_, Index lhsStride, Index cols, Index rows)
   {
-    enum { PacketSize = packet_traits<Scalar>::size };
-    const_blas_data_mapper<Scalar,Index,StorageOrder> lhs(_lhs,lhsStride);
+    typedef typename unpacket_traits<typename packet_traits<Scalar>::type>::half HalfPacket;
+    typedef typename unpacket_traits<typename unpacket_traits<typename packet_traits<Scalar>::type>::half>::half QuarterPacket;
+    enum { PacketSize = packet_traits<Scalar>::size,
+           HalfPacketSize = unpacket_traits<HalfPacket>::size,
+           QuarterPacketSize = unpacket_traits<QuarterPacket>::size,
+           HasHalf = (int)HalfPacketSize < (int)PacketSize,
+           HasQuarter = (int)QuarterPacketSize < (int)HalfPacketSize};
+
+    const_blas_data_mapper<Scalar,Index,StorageOrder> lhs(lhs_,lhsStride);
     Index count = 0;
     //Index peeled_mc3 = (rows/Pack1)*Pack1;
     
     const Index peeled_mc3 = Pack1>=3*PacketSize ? (rows/(3*PacketSize))*(3*PacketSize) : 0;
     const Index peeled_mc2 = Pack1>=2*PacketSize ? peeled_mc3+((rows-peeled_mc3)/(2*PacketSize))*(2*PacketSize) : 0;
-    const Index peeled_mc1 = Pack1>=1*PacketSize ? (rows/(1*PacketSize))*(1*PacketSize) : 0;
+    const Index peeled_mc1 = Pack1>=1*PacketSize ? peeled_mc2+((rows-peeled_mc2)/(1*PacketSize))*(1*PacketSize) : 0;
+    const Index peeled_mc_half = Pack1>=HalfPacketSize ? peeled_mc1+((rows-peeled_mc1)/(HalfPacketSize))*(HalfPacketSize) : 0;
+    const Index peeled_mc_quarter = Pack1>=QuarterPacketSize ? peeled_mc_half+((rows-peeled_mc_half)/(QuarterPacketSize))*(QuarterPacketSize) : 0;
     
     if(Pack1>=3*PacketSize)
       for(Index i=0; i<peeled_mc3; i+=3*PacketSize)
@@ -66,8 +75,16 @@ struct symm_pack_lhs
       for(Index i=peeled_mc2; i<peeled_mc1; i+=1*PacketSize)
         pack<1*PacketSize>(blockA, lhs, cols, i, count);
 
+    if(HasHalf && Pack1>=HalfPacketSize)
+      for(Index i=peeled_mc1; i<peeled_mc_half; i+=HalfPacketSize)
+        pack<HalfPacketSize>(blockA, lhs, cols, i, count);
+
+    if(HasQuarter && Pack1>=QuarterPacketSize)
+      for(Index i=peeled_mc_half; i<peeled_mc_quarter; i+=QuarterPacketSize)
+        pack<QuarterPacketSize>(blockA, lhs, cols, i, count);
+
     // do the same with mr==1
-    for(Index i=peeled_mc1; i<rows; i++)
+    for(Index i=peeled_mc_quarter; i<rows; i++)
     {
       for(Index k=0; k<i; k++)
         blockA[count++] = lhs(i, k);                   // normal
@@ -84,11 +101,11 @@ template<typename Scalar, typename Index, int nr, int StorageOrder>
 struct symm_pack_rhs
 {
   enum { PacketSize = packet_traits<Scalar>::size };
-  void operator()(Scalar* blockB, const Scalar* _rhs, Index rhsStride, Index rows, Index cols, Index k2)
+  void operator()(Scalar* blockB, const Scalar* rhs_, Index rhsStride, Index rows, Index cols, Index k2)
   {
     Index end_k = k2 + rows;
     Index count = 0;
-    const_blas_data_mapper<Scalar,Index,StorageOrder> rhs(_rhs,rhsStride);
+    const_blas_data_mapper<Scalar,Index,StorageOrder> rhs(rhs_,rhsStride);
     Index packet_cols8 = nr>=8 ? (cols/8) * 8 : 0;
     Index packet_cols4 = nr>=4 ? (cols/4) * 4 : 0;
 
@@ -313,8 +330,8 @@ struct product_selfadjoint_matrix<Scalar,Index,LhsStorageOrder,true,ConjugateLhs
 
   static EIGEN_DONT_INLINE void run(
     Index rows, Index cols,
-    const Scalar* _lhs, Index lhsStride,
-    const Scalar* _rhs, Index rhsStride,
+    const Scalar* lhs_, Index lhsStride,
+    const Scalar* rhs_, Index rhsStride,
     Scalar* res,        Index resIncr, Index resStride,
     const Scalar& alpha, level3_blocking<Scalar,Scalar>& blocking);
 };
@@ -325,9 +342,9 @@ template <typename Scalar, typename Index,
           int ResInnerStride>
 EIGEN_DONT_INLINE void product_selfadjoint_matrix<Scalar,Index,LhsStorageOrder,true,ConjugateLhs, RhsStorageOrder,false,ConjugateRhs,ColMajor,ResInnerStride>::run(
     Index rows, Index cols,
-    const Scalar* _lhs, Index lhsStride,
-    const Scalar* _rhs, Index rhsStride,
-    Scalar* _res,       Index resIncr, Index resStride,
+    const Scalar* lhs_, Index lhsStride,
+    const Scalar* rhs_, Index rhsStride,
+    Scalar* res_,       Index resIncr, Index resStride,
     const Scalar& alpha, level3_blocking<Scalar,Scalar>& blocking)
   {
     Index size = rows;
@@ -338,10 +355,10 @@ EIGEN_DONT_INLINE void product_selfadjoint_matrix<Scalar,Index,LhsStorageOrder,t
     typedef const_blas_data_mapper<Scalar, Index, (LhsStorageOrder == RowMajor) ? ColMajor : RowMajor> LhsTransposeMapper;
     typedef const_blas_data_mapper<Scalar, Index, RhsStorageOrder> RhsMapper;
     typedef blas_data_mapper<typename Traits::ResScalar, Index, ColMajor, Unaligned, ResInnerStride> ResMapper;
-    LhsMapper lhs(_lhs,lhsStride);
-    LhsTransposeMapper lhs_transpose(_lhs,lhsStride);
-    RhsMapper rhs(_rhs,rhsStride);
-    ResMapper res(_res, resStride, resIncr);
+    LhsMapper lhs(lhs_,lhsStride);
+    LhsTransposeMapper lhs_transpose(lhs_,lhsStride);
+    RhsMapper rhs(rhs_,rhsStride);
+    ResMapper res(res_, resStride, resIncr);
 
     Index kc = blocking.kc();                   // cache block size along the K direction
     Index mc = (std::min)(rows,blocking.mc());  // cache block size along the M direction
@@ -355,7 +372,7 @@ EIGEN_DONT_INLINE void product_selfadjoint_matrix<Scalar,Index,LhsStorageOrder,t
     gebp_kernel<Scalar, Scalar, Index, ResMapper, Traits::mr, Traits::nr, ConjugateLhs, ConjugateRhs> gebp_kernel;
     symm_pack_lhs<Scalar, Index, Traits::mr, Traits::LhsProgress, LhsStorageOrder> pack_lhs;
     gemm_pack_rhs<Scalar, Index, RhsMapper, Traits::nr,RhsStorageOrder> pack_rhs;
-    gemm_pack_lhs<Scalar, Index, LhsTransposeMapper, Traits::mr, Traits::LhsProgress, LhsStorageOrder==RowMajor?ColMajor:RowMajor, true> pack_lhs_transposed;
+    gemm_pack_lhs<Scalar, Index, LhsTransposeMapper, Traits::mr, Traits::LhsProgress, typename Traits::LhsPacket4Packing, LhsStorageOrder==RowMajor?ColMajor:RowMajor, true> pack_lhs_transposed;
 
     for(Index k2=0; k2<size; k2+=kc)
     {
@@ -390,7 +407,7 @@ EIGEN_DONT_INLINE void product_selfadjoint_matrix<Scalar,Index,LhsStorageOrder,t
       for(Index i2=k2+kc; i2<size; i2+=mc)
       {
         const Index actual_mc = (std::min)(i2+mc,size)-i2;
-        gemm_pack_lhs<Scalar, Index, LhsMapper, Traits::mr, Traits::LhsProgress, LhsStorageOrder,false>()
+        gemm_pack_lhs<Scalar, Index, LhsMapper, Traits::mr, Traits::LhsProgress, typename Traits::LhsPacket4Packing, LhsStorageOrder,false>()
           (blockA, lhs.getSubMapper(i2, k2), actual_kc, actual_mc);
 
         gebp_kernel(res.getSubMapper(i2, 0), blockA, blockB, actual_mc, actual_kc, cols, alpha);
@@ -408,8 +425,8 @@ struct product_selfadjoint_matrix<Scalar,Index,LhsStorageOrder,false,ConjugateLh
 
   static EIGEN_DONT_INLINE void run(
     Index rows, Index cols,
-    const Scalar* _lhs, Index lhsStride,
-    const Scalar* _rhs, Index rhsStride,
+    const Scalar* lhs_, Index lhsStride,
+    const Scalar* rhs_, Index rhsStride,
     Scalar* res,        Index resIncr, Index resStride,
     const Scalar& alpha, level3_blocking<Scalar,Scalar>& blocking);
 };
@@ -420,9 +437,9 @@ template <typename Scalar, typename Index,
           int ResInnerStride>
 EIGEN_DONT_INLINE void product_selfadjoint_matrix<Scalar,Index,LhsStorageOrder,false,ConjugateLhs, RhsStorageOrder,true,ConjugateRhs,ColMajor,ResInnerStride>::run(
     Index rows, Index cols,
-    const Scalar* _lhs, Index lhsStride,
-    const Scalar* _rhs, Index rhsStride,
-    Scalar* _res,       Index resIncr, Index resStride,
+    const Scalar* lhs_, Index lhsStride,
+    const Scalar* rhs_, Index rhsStride,
+    Scalar* res_,       Index resIncr, Index resStride,
     const Scalar& alpha, level3_blocking<Scalar,Scalar>& blocking)
   {
     Index size = cols;
@@ -431,8 +448,8 @@ EIGEN_DONT_INLINE void product_selfadjoint_matrix<Scalar,Index,LhsStorageOrder,f
 
     typedef const_blas_data_mapper<Scalar, Index, LhsStorageOrder> LhsMapper;
     typedef blas_data_mapper<typename Traits::ResScalar, Index, ColMajor, Unaligned, ResInnerStride> ResMapper;
-    LhsMapper lhs(_lhs,lhsStride);
-    ResMapper res(_res,resStride, resIncr);
+    LhsMapper lhs(lhs_,lhsStride);
+    ResMapper res(res_,resStride, resIncr);
 
     Index kc = blocking.kc();                   // cache block size along the K direction
     Index mc = (std::min)(rows,blocking.mc());  // cache block size along the M direction
@@ -442,14 +459,14 @@ EIGEN_DONT_INLINE void product_selfadjoint_matrix<Scalar,Index,LhsStorageOrder,f
     ei_declare_aligned_stack_constructed_variable(Scalar, blockB, sizeB, blocking.blockB());
 
     gebp_kernel<Scalar, Scalar, Index, ResMapper, Traits::mr, Traits::nr, ConjugateLhs, ConjugateRhs> gebp_kernel;
-    gemm_pack_lhs<Scalar, Index, LhsMapper, Traits::mr, Traits::LhsProgress, LhsStorageOrder> pack_lhs;
+    gemm_pack_lhs<Scalar, Index, LhsMapper, Traits::mr, Traits::LhsProgress, typename Traits::LhsPacket4Packing, LhsStorageOrder> pack_lhs;
     symm_pack_rhs<Scalar, Index, Traits::nr,RhsStorageOrder> pack_rhs;
 
     for(Index k2=0; k2<size; k2+=kc)
     {
       const Index actual_kc = (std::min)(k2+kc,size)-k2;
 
-      pack_rhs(blockB, _rhs, rhsStride, actual_kc, cols, k2);
+      pack_rhs(blockB, rhs_, rhsStride, actual_kc, cols, k2);
 
       // => GEPP
       for(Index i2=0; i2<rows; i2+=mc)

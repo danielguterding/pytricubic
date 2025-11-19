@@ -106,7 +106,7 @@ namespace group_theory {
 /** \internal
   *
   * \class strip_identities
-  * \ingroup CXX11_TensorSymmetry_Module
+  * \ingroup TensorSymmetry_Module
   *
   * \brief Cleanse a list of group elements of the identity element
   *
@@ -148,7 +148,7 @@ struct strip_identities<Equality, id, type_list<EIGEN_TPL_PP_SPEC_HACK_USE(ts)>>
 /** \internal
   *
   * \class dimino_first_step_elements_helper 
-  * \ingroup CXX11_TensorSymmetry_Module
+  * \ingroup TensorSymmetry_Module
   *
   * \brief Recursive template that adds powers of the first generator to the list of group elements
   *
@@ -198,7 +198,7 @@ struct dimino_first_step_elements_helper<Multiply, Equality, id, g, current_elem
 /** \internal
   *
   * \class dimino_first_step_elements
-  * \ingroup CXX11_TensorSymmetry_Module
+  * \ingroup TensorSymmetry_Module
   *
   * \brief Add all powers of the first generator to the list of group elements
   *
@@ -236,7 +236,7 @@ struct dimino_first_step_elements
 /** \internal
   *
   * \class dimino_get_coset_elements
-  * \ingroup CXX11_TensorSymmetry_Module
+  * \ingroup TensorSymmetry_Module
   *
   * \brief Generate all elements of a specific coset
   *
@@ -244,7 +244,7 @@ struct dimino_first_step_elements
   * multiplying all elements in the given subgroup with the new
   * coset representative. Note that the first element of the
   * subgroup is always the identity element, so the first element of
-  * ther result of this template is going to be the coset
+  * the result of this template is going to be the coset
   * representative itself.
   *
   * Note that this template accepts an additional boolean parameter
@@ -277,7 +277,7 @@ struct dimino_get_coset_elements<Multiply, sub_group_elements, new_coset_rep, fa
 /** \internal
   *
   * \class dimino_add_cosets_for_rep
-  * \ingroup CXX11_TensorSymmetry_Module
+  * \ingroup TensorSymmetry_Module
   *
   * \brief Recursive template for adding coset spaces
   *
@@ -365,7 +365,7 @@ struct dimino_add_cosets_for_rep<Multiply, Equality, id, sub_group_elements, ele
 /** \internal
   *
   * \class dimino_add_all_coset_spaces
-  * \ingroup CXX11_TensorSymmetry_Module
+  * \ingroup TensorSymmetry_Module
   *
   * \brief Recursive template for adding all coset spaces for a new generator
   *
@@ -440,7 +440,7 @@ struct dimino_add_all_coset_spaces<Multiply, Equality, id, sub_group_elements, e
 /** \internal
   *
   * \class dimino_add_generator
-  * \ingroup CXX11_TensorSymmetry_Module
+  * \ingroup TensorSymmetry_Module
   *
   * \brief Enlarge the group by adding a new generator.
   *
@@ -502,7 +502,7 @@ struct dimino_add_generator<Multiply, Equality, id, elements, generators_done, c
 /** \internal
   *
   * \class dimino_add_remaining_generators
-  * \ingroup CXX11_TensorSymmetry_Module
+  * \ingroup TensorSymmetry_Module
   *
   * \brief Recursive template that adds all remaining generators to a group
   *
@@ -570,7 +570,7 @@ struct dimino_add_remaining_generators<Multiply, Equality, id, generators_done, 
 /** \internal
   *
   * \class enumerate_group_elements_noid
-  * \ingroup CXX11_TensorSymmetry_Module
+  * \ingroup TensorSymmetry_Module
   *
   * \brief Helper template that implements group element enumeration
   *
@@ -625,7 +625,7 @@ struct enumerate_group_elements_noid<Multiply, Equality, id, type_list<>, initia
 /** \internal
   *
   * \class enumerate_group_elements
-  * \ingroup CXX11_TensorSymmetry_Module
+  * \ingroup TensorSymmetry_Module
   *
   * \brief Enumerate all elements in a finite group
   *

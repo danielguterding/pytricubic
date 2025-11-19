@@ -354,6 +354,7 @@ class PolynomialSolver : public PolynomialSolverBase<_Scalar,_Deg>
         internal::companion<Scalar,_Deg> companion( poly );
         companion.balance();
         m_eigenSolver.compute( companion.denseMatrix() );
+        eigen_assert(m_eigenSolver.info() == Eigen::Success);
         m_roots = m_eigenSolver.eigenvalues();
         // cleanup noise in imaginary part of real roots:
         // if the imaginary part is rather small compared to the real part
